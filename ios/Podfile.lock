@@ -372,6 +372,8 @@ PODS:
     - React-jsi (= 0.70.6)
     - React-logger (= 0.70.6)
     - React-perflogger (= 0.70.6)
+  - RNAppleHealthKit (1.7.0):
+    - React
   - RNCAsyncStorage (1.21.0):
     - React-Core
   - RNCMaskedView (0.3.1):
@@ -381,11 +383,6 @@ PODS:
   - RNScreens (3.29.0):
     - React-Core
     - React-RCTImage
-  - RNValidicHealthkit (1.4.6):
-    - React
-    - RNValidicSession
-  - RNValidicSession (1.4.6):
-    - React
   - SocketRocket (0.6.1)
   - Yoga (1.14.0)
   - YogaKit (1.18.1):
@@ -452,12 +449,11 @@ DEPENDENCIES:
   - React-RCTVibration (from `../node_modules/react-native/Libraries/Vibration`)
   - React-runtimeexecutor (from `../node_modules/react-native/ReactCommon/runtimeexecutor`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
+  - RNAppleHealthKit (from `../node_modules/react-native-health`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNScreens (from `../node_modules/react-native-screens`)
-  - RNValidicHealthkit (from `../node_modules/react-native-validic-aggregator-ios`)
-  - RNValidicSession (from `../node_modules/react-native-validic-session`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -549,6 +545,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/runtimeexecutor"
   ReactCommon:
     :path: "../node_modules/react-native/ReactCommon"
+  RNAppleHealthKit:
+    :path: "../node_modules/react-native-health"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNCMaskedView:
@@ -557,10 +555,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-gesture-handler"
   RNScreens:
     :path: "../node_modules/react-native-screens"
-  RNValidicHealthkit:
-    :path: "../node_modules/react-native-validic-aggregator-ios"
-  RNValidicSession:
-    :path: "../node_modules/react-native-validic-session"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -613,16 +607,15 @@ SPEC CHECKSUMS:
   React-RCTVibration: c75ceef7aa60a33b2d5731ebe5800ddde40cefc4
   React-runtimeexecutor: 15437b576139df27635400de0599d9844f1ab817
   ReactCommon: 349be31adeecffc7986a0de875d7fb0dcf4e251c
+  RNAppleHealthKit: 60a6beefdd89a75811e9a8873a5e24f351dee681
   RNCAsyncStorage: 618d03a5f52fbccb3d7010076bc54712844c18ef
   RNCMaskedView: 090213d32d8b3bb83a4dcb7d12c18f0152591906
   RNGestureHandler: e98441928705d9d1184b599d7c1c6df2dd4f7724
   RNScreens: fa9b582d85ae5d62c91c66003b5278458fed7aaa
-  RNValidicHealthkit: cb131cbc4acab8129a58585d52692d939e39b841
-  RNValidicSession: 83c42aed57b09ef38b88781898b17903b949506f
   SocketRocket: f32cd54efbe0f095c4d7594881e52619cfe80b17
   Yoga: 99caf8d5ab45e9d637ee6e0174ec16fbbb01bcfc
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 
-PODFILE CHECKSUM: acfd202356de4e593bd740beaf8e0b5194683c75
+PODFILE CHECKSUM: 2af04f55bc81217f37ea32ab7aeb62a35828a18c
 
 COCOAPODS: 1.14.3

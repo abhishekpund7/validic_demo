@@ -39,8 +39,6 @@
 	<string></string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Demo wants the Health data Usage permission</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Demo wants the Health data update permission</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
