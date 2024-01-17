@@ -1,114 +1,178 @@
 import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
-  Text,
   ScrollView,
-  Platform,
-  DeviceEventEmitter,
-  View,
+  NativeEventEmitter,
+  NativeModules,
+  Alert,
 } from 'react-native';
-import ValidicAPI from '../helper/validicService/ValidicAPI';
 import {styles} from './WebviewScreen.Style';
-import {useNavigation} from '@react-navigation/native';
-import ValidicLocalStorageAPI from '../helper/validicService/ValidicLocalStorageAPI';
 import PrimaryButton from '../components/PrimaryButton';
-import SecondaryButton from '../components/SecondaryButton';
-import {hp} from '../helper/ResponsiveDuplicate';
-import {ValidicResponseMarketplace} from '../helper/validicService/ValidicTypes';
-import ValidicHealthKit, {
-  SampleTypes,
-} from 'react-native-validic-aggregator-ios';
+import AppleHealthKit, {
+  HealthValue,
+  HealthKitPermissions,
+  HealthInputOptions,
+  HealthObserver,
+  HealthUnit,
+} from 'react-native-health';
 
 const HomeScreen = () => {
-  const [marketplaceData, setMarketplaceData] = useState<
-    ValidicResponseMarketplace[]
-  >([]);
-  const [healthKitEnabled, setHealthKitEnabled] = useState<boolean>(false);
-  const navigation = useNavigation();
-  const [isLoading, setLoading] = useState(false);
+  const permissions = {
+    permissions: {
+      read: [
+        AppleHealthKit.Constants.Permissions.HeartRate,
+        AppleHealthKit.Constants.Permissions.OxygenSaturation,
+      ],
+      write: [],
+    },
+  } as HealthKitPermissions;
+
+  const [heartRateMatric, setHeartRateMatric] = useState<HealthValue[]>([]);
+
+  const [oxygenSaturationMatric, setOxygenSaturation] = useState<HealthValue[]>(
+    [],
+  );
 
   useEffect(() => {
-    ValidicAPI.startValidicSession()
-      .then(() => {
-        console.log('[V] startValidicSession success');
-      })
-      .catch(error => {
-        console.log('[V] startValidicSession error', error);
+    if (oxygenSaturationMatric.length !== 0) {
+      oxygenSaturationMatric.map((item, index) => {
+        // console.log('Oxygen Saturation', new Date(item.endDate), item.value);
+        if (index === 0) {
+          // Alert.alert(
+          //   `New Oxygen Saturation Record\n${new Date(
+          //     item.endDate,
+          //   )}\nOxygen Saturation: ${item.value}`,
+          // );
+        }
       });
+    }
+  }, [oxygenSaturationMatric]);
 
-    getHealthKitEnabledFromLocalStorage()
-      .then(() => {})
-      .catch(() => {});
-    getMarketplaceDataFromLocalStorage()
-      .then(() => {})
-      .catch(() => {});
+  useEffect(() => {
+    if (heartRateMatric.length !== 0) {
+      heartRateMatric.map((item, index) => {
+        // console.log('Heart Rate', new Date(item.endDate), item.value);
+        if (index === 0) {
+          // Alert.alert(
+          //   `New Heart Rate Record\n${new Date(item.endDate)}\nHeart Rate: ${
+          //     item.value
+          //   }`,
+          // );
+        }
+      });
+    }
+  }, [heartRateMatric]);
 
-    DeviceEventEmitter.addListener(
-      'connectwearablewebview.onconnectcomplete',
-      () => {
-        setLoading(true);
-        ValidicAPI.updateMarketplaceData()
-          .then(async () => {
-            await getMarketplaceDataFromLocalStorage();
-            setLoading(false);
-          })
-          .catch(() => {
-            setLoading(false);
-          });
-        navigation.pop(1);
+  useEffect(() => {
+    const healthKitEmitter = new NativeEventEmitter(
+      NativeModules.AppleHealthKit,
+    );
+
+    const subscription = healthKitEmitter.addListener(
+      'healthKit:HeartRate:new',
+      data => {
+        console.log('[O] --> healthKit:HeartRate:new observer triggered', data);
+        getHeartRateSamples();
       },
     );
 
     return () => {
-      DeviceEventEmitter.removeAllListeners(
-        'connectwearablewebview.onconnectcomplete',
-      );
+      subscription.remove();
     };
   }, []);
 
-  useEffect(() => {
-    if (healthKitEnabled) {
-      ValidicHealthKit.getCurrentSubscriptions((subscriptions: any) => {
-        console.log('[V] Healtkit getCurrentSubscriptions is ', subscriptions);
-      });
-    }
-  }, [healthKitEnabled]);
+  const isAppleHealthKitAvailable = () => {
+    AppleHealthKit.isAvailable((error: Object, available: boolean) => {
+      if (error) {
+        console.log('[ERROR] initializing Healthkit: ', error);
+        return;
+      }
 
-  async function getHealthKitEnabledFromLocalStorage() {
-    setHealthKitEnabled(await ValidicLocalStorageAPI.getHealthKitEnabled());
-  }
+      console.log('isAppleHealthKitAvailable: ', available);
 
-  const ValidicHealthKitSubscriptions = [
-    SampleTypes.HKQuantityTypeIdentifierOxygenSaturation,
-    SampleTypes.HKQuantityTypeIdentifierHeartRate,
-  ];
+      initHealthKit();
+    });
+  };
 
-  async function getMarketplaceDataFromLocalStorage() {
-    const data: ValidicResponseMarketplace[] =
-      await ValidicLocalStorageAPI.getMarketplaceData();
-    setMarketplaceData(data);
-  }
+  const initHealthKit = (): void => {
+    // Start Loader
+    AppleHealthKit.initHealthKit(
+      permissions,
+      (error: string, result: HealthValue) => {
+        /* Called after we receive a response from the system */
 
-  function handleAppleHealthButtonPress(): void {
-    if (healthKitEnabled) {
-      console.log('[V] Clearing Subscription');
-      ValidicHealthKit.setSubscriptions([]);
-    } else {
-      ValidicHealthKit.setSubscriptions([]);
-      ValidicHealthKit.setSubscriptions(ValidicHealthKitSubscriptions);
-    }
+        if (error) {
+          console.log('[ERROR] Cannot grant permissions!', error);
+          return;
+        }
 
-    setHealthKitEnabled(!healthKitEnabled);
-    ValidicLocalStorageAPI.saveHealthKitEnabled(!healthKitEnabled);
+        // Stop Loader
+        console.log('Initialized Healthkit', result);
+        /* Can now read or write to HealthKit */
+        getOxygenSaturationSamples();
+        getHeartRateSamples();
+      },
+    );
+  };
 
-    ValidicAPI.updateHealthKit()
-      .then(data => {
-        // console.log('[V] in updateHealthKit', data);
-      })
-      .catch(error => {
-        // console.log('[V] error in updateHealthKit', error);
-      });
-  }
+  const getOxygenSaturationSamples = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 2);
+
+    const options: HealthInputOptions = {
+      startDate: date.toISOString(),
+      endDate: new Date().toISOString(),
+    };
+
+    AppleHealthKit.getOxygenSaturationSamples(
+      options,
+      (error: string, results: HealthValue[]) => {
+        if (error) {
+          console.log('getOxygenSaturationSamples error', error);
+          return;
+        }
+
+        /* Samples are now collected from HealthKit */
+        console.log('getOxygenSaturationSamples', error, results);
+        setOxygenSaturation(results);
+      },
+    );
+  };
+
+  const getHeartRateSamples = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 2);
+
+    const options: HealthInputOptions = {
+      startDate: date.toISOString(),
+      endDate: new Date().toISOString(),
+    };
+
+    AppleHealthKit.getHeartRateSamples(
+      options,
+      (error: string, results: HealthValue[]) => {
+        if (error) {
+          console.log('getHeartRateSamples error', error);
+          return;
+        }
+
+        /* Samples are now collected from HealthKit */
+        console.log('getHeartRateSamples', error, results);
+        setHeartRateMatric(results);
+      },
+    );
+  };
+
+  const handlePressGetAuthStatus = () => {
+    AppleHealthKit.getAuthStatus(permissions, (error, result) => {
+      if (error) {
+        console.log('getAuthStatus error', error);
+        return;
+      }
+
+      console.log('getAuthStatus response', result);
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -118,72 +182,16 @@ const HomeScreen = () => {
         <PrimaryButton
           title={'Rest API'}
           onPress={() => {
-            ValidicAPI.updateHealthMetrics();
+            isAppleHealthKitAvailable();
           }}
           marginTop={0}
         />
-        {Platform.OS === 'ios' && (
-          <View style={{marginTop: hp(32)}}>
-            <Text style={styles.appleHealthTextStyle}>{'Apple Health'}</Text>
-            {healthKitEnabled ? (
-              <SecondaryButton
-                title={'Disconnect'}
-                onPress={handleAppleHealthButtonPress}
-                marginTop={hp(16)}
-              />
-            ) : (
-              <PrimaryButton
-                title={'Connect'}
-                onPress={handleAppleHealthButtonPress}
-                marginTop={hp(16)}
-              />
-            )}
-          </View>
-        )}
-        {marketplaceData.length !== 0 && (
-          <View>
-            {Object.entries(marketplaceData).map((integration, key) => {
-              const name = integration[1].display_name;
-              const connected = integration[1].connected;
-              const fullUrl = connected
-                ? integration[1].disconnect_url
-                : integration[1].connect_url;
-              const screenTitle =
-                (connected ? 'Disconnect' : 'Connect') + ' ' + name;
-
-              return (
-                <View style={styles.viewStyle} key={key}>
-                  <Text style={[styles.appleHealthTextStyle, {marginTop: 0}]}>
-                    {name}
-                  </Text>
-                  {connected ? (
-                    <SecondaryButton
-                      title={'Disconnect'}
-                      onPress={() => {
-                        navigation.push('WebviewScreen', {
-                          url: fullUrl,
-                          title: screenTitle,
-                        });
-                      }}
-                      marginTop={hp(16)}
-                    />
-                  ) : (
-                    <PrimaryButton
-                      title={'Connect'}
-                      onPress={() => {
-                        navigation.push('WebviewScreen', {
-                          url: fullUrl,
-                          title: screenTitle,
-                        });
-                      }}
-                      marginTop={hp(16)}
-                    />
-                  )}
-                </View>
-              );
-            })}
-          </View>
-        )}
+        {/* <PrimaryButton
+          title={'Get Auth Status'}
+          onPress={() => {
+            handlePressGetAuthStatus();
+          }}
+        /> */}
       </ScrollView>
     </SafeAreaView>
   );
